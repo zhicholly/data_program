@@ -5,9 +5,6 @@ handle函数的最后一个参数是用来控制要不要加浮置板等其他�
 
 '''
 
-
-
-
 import pandas as pd
 import seaborn as sns
 from pylab import *
@@ -61,11 +58,11 @@ def mems_procAX(channel, data):
         # data转float以下计算
         # data = [float(ot) for ot in data]
         y = filter_matlab(b, a, data)
-        fs = round(len(y) / (1 * Fs))  # 取整数 取5s
+        fs = round(len(y) / (1 * Fs))
         # print('fs:', fs)
 
         for o in range(fs):
-            data_s = y[o * Fs:(o + 5) * Fs]
+            data_s = y[o * Fs:(o + 5) * Fs]  # 5s register
             t, f, N = stationarity(data_s)
             # 将频率进行分组
             i1 = round(0.5 * N / Fs)
@@ -95,10 +92,10 @@ def mems_procAX(channel, data):
         data = [float(ot - avg) for ot in data]
         y = filter_matlab(b, a, data)
         fs = round(len(y) / Fs)  # 取整数
-        print('fs:',fs)
+        # print('fs:', fs)
 
         for o in range(fs):
-            data_s = y[o * Fs:(o + 5) * Fs]
+            data_s = y[o * Fs:(o + 5) * Fs]  # this is 5s register
             t, f, N = stationarity(data_s)
             # 将频率进行分组
             i1 = round(0.5 * N / Fs)
@@ -128,7 +125,7 @@ def mems_procAX(channel, data):
         for i in range(num):
             data_z = data[i * 500:(i + 1) * 500]
             data_z = [float(ot) for ot in data_z]
-            data_m = max(data_z)
+            data_m = np.mean(data_z)
             wz_n.append(data_m)
         # data_num = [str(ot) for ot in data_num]
     return wz_n
@@ -224,7 +221,7 @@ def message_plus(distance):
                 if row_df1['减振地段'] == '一般':
                     if row_df1['曲线'] == '曲线段':
                         d.append('一般曲线段')
-                        for _,k in pplus_data.iterrows():
+                        for _, k in pplus_data.iterrows():
                             if k['起始里程'] <= dist <= k['终点里程']:
                                 r.append(k['曲线半径'])
                                 break
@@ -234,7 +231,7 @@ def message_plus(distance):
                 if row_df1['减振地段'] == '中等减振':
                     if row_df1['曲线'] == '曲线段':
                         d.append('中等减振曲线段')
-                        for _,k in pplus_data.iterrows():
+                        for _, k in pplus_data.iterrows():
                             if k['起始里程'] <= dist <= k['终点里程']:
                                 r.append(k['曲线半径'])
                                 break
@@ -244,7 +241,7 @@ def message_plus(distance):
                 if row_df1['减振地段'] == '高等减振':
                     if row_df1['曲线'] == '曲线段':
                         d.append('高等减振曲线段')
-                        for _,k in pplus_data.iterrows():
+                        for _, k in pplus_data.iterrows():
                             if k['起始里程'] <= dist <= k['终点里程']:
                                 r.append(k['曲线半径'])
                                 break
@@ -254,7 +251,7 @@ def message_plus(distance):
                 if row_df1['减振地段'] == '特殊减振':
                     if row_df1['曲线'] == '曲线段':
                         d.append('特殊减振曲线段')
-                        for _,k in pplus_data.iterrows():
+                        for _, k in pplus_data.iterrows():
                             if k['起始里程'] <= dist <= k['终点里程']:
                                 r.append(k['曲线半径'])
                                 break
@@ -263,7 +260,8 @@ def message_plus(distance):
                         r.append(0)
                 break
 
-    return d,r
+    return d, r
+
 
 def find_midpoint(r):
     midpoints = []
@@ -280,15 +278,13 @@ def find_midpoint(r):
     return midpoints
 
 
-
-
 # def plot_plus_data(plus_data):
 #     for i in plus_data:
 #         for j in i:
 #             point = plt.scatter()
 
 
-def handle(path, iterm, distance,op = 0):
+def handle(path, iterm, distance, op=0):
     file_name = os.path.basename(path)
     # month = file_name[9:11]
     # day = file_name[11:13]
@@ -315,14 +311,14 @@ def handle(path, iterm, distance,op = 0):
 
         ####删除下面
         if op == 1:
-            plus_data,r = message_plus(xkdistance)
+            plus_data, r = message_plus(xkdistance)
 
             df['jiegou'] = plus_data
-        df['里程'] = ['XK{}+{}'.format(int(i//1000),int(i-(i//1000)*1000)) for i in xkdistance]
+        df['里程'] = ['XK{}+{}'.format(int(i // 1000), int(i - (i // 1000) * 1000)) for i in xkdistance]
         df['实际里程'] = [9358 - 75 - i for i in distan_resampling]
         # df.to_csv('D:/杭州/2024年1月17日监测图像/临时文件/{}1.csv'.format(s_name), index=False, encoding='utf_8_sig')
 
-        plt.title('{}噪声数据'.format(s_name), fontsize=25)
+        plt.title('{}噪声数据'.format(s_name), fontsize=15)
         ax = sns.lineplot(data=df, x=df.index, y=riqi, label='噪声（dB)')
         ax = sns.lineplot([83 for i in range(len(x))], color='green', label="83")
         ax = sns.lineplot([85 for i in range(len(x))], color='yellow', label="85")
@@ -334,7 +330,7 @@ def handle(path, iterm, distance,op = 0):
 
         max_index = x.index(max(x))
         plt.scatter(x=max_index, y=df[riqi][max_index], marker='o', color="r")
-        plt.text(max_index, df[riqi][max_index], str(df[riqi][max_index]), ha='center', va='bottom')
+        plt.text(max_index, df[riqi][max_index], str(round(df[riqi][max_index],2)), ha='center', va='bottom')
         if xkdistance[1] > xkdistance[-1]:
             plt.xticks(df.index[::5],
                        ['XK{}+{}'.format(int(i // 1000), int(i - (i // 1000) * 1000)) for i in xkdistance[::5]],
@@ -355,9 +351,8 @@ def handle(path, iterm, distance,op = 0):
         else:
             xkdistance = [lic1 + 75 + i for i in distan_resampling]
 
-
         if op == 1:
-            plus_data,r = message_plus(xkdistance)
+            plus_data, r = message_plus(xkdistance)
 
             df['jiegou'] = plus_data
         # df['里程'] = ['XK{}+{}'.format(int(i//1000),int(i-(i//1000)*1000)) for i in xkdistance]
@@ -383,7 +378,7 @@ def handle(path, iterm, distance,op = 0):
 
         max_index = x.index(max(x))
         plt.scatter(x=max_index, y=df[riqi][max_index], marker='o', color="r")
-        plt.text(max_index, df[riqi][max_index], str(df[riqi][max_index]), ha='center', va='bottom')
+        plt.text(max_index, df[riqi][max_index], str(round(df[riqi][max_index],2)), ha='center', va='bottom')
 
     if iterm == 'az':
         x = open_files(path, 'az')
@@ -396,10 +391,9 @@ def handle(path, iterm, distance,op = 0):
             xkdistance = [lic1 + 75 + i for i in distan_resampling]
 
         if op == 1:
-            plus_data,r = message_plus(xkdistance)
+            plus_data, r = message_plus(xkdistance)
 
             df['jiegou'] = plus_data
-
 
         # ghj = pd.DataFrame()
         # ghj['noise'] = x
@@ -427,12 +421,10 @@ def handle(path, iterm, distance,op = 0):
         max_index = x.index(max(x))
         plt.scatter(x=max_index, y=df[riqi][max_index], marker='o', color="r")
 
-        plt.text(max_index, df[riqi][max_index], str(df[riqi][max_index]), ha='center', va='bottom')
-
-
+        plt.text(max_index, df[riqi][max_index], str(round(df[riqi][max_index],2)), ha='center', va='bottom')
 
     if op == 1:
-        #添加的外部数据
+        # 添加的外部数据
         kk = 78
         if iterm == 'noise':
             kk = 78
@@ -441,9 +433,9 @@ def handle(path, iterm, distance,op = 0):
         if iterm == 'az':
             kk = 1.5
         plt.scatter(x=[i for i in df[df['jiegou'] == '一般直线段'].index],
-                    y=[kk] * len(df[df['jiegou'] == '一般直线段']),c = 'papayawhip',label = '一般直线段')
+                    y=[kk] * len(df[df['jiegou'] == '一般直线段']), c='papayawhip', label='一般直线段')
         plt.scatter(x=[i for i in df[df['jiegou'] == '一般曲线段'].index],
-                    y=[kk] * len(df[df['jiegou'] == '一般曲线段']),c = 'gold',label = '一般曲线段')
+                    y=[kk] * len(df[df['jiegou'] == '一般曲线段']), c='gold', label='一般曲线段')
         plt.scatter(x=[i for i in df[df['jiegou'] == '中等减振直线段'].index],
                     y=[kk] * len(df[df['jiegou'] == '中等减振直线段']), c='lime', label='中等减振直线段')
         plt.scatter(x=[i for i in df[df['jiegou'] == '中等减振曲线段'].index],
@@ -460,23 +452,24 @@ def handle(path, iterm, distance,op = 0):
         for p in points:
             if int(r[p]) > 0:
                 if iterm == 'noise':
-                    plt.text(p,78.4,str(int(r[p])))
+                    plt.text(p, 78.4, str(int(r[p])))
                 if iterm == 'ay':
-                    plt.text(p,1.5,str(int(r[p])))
+                    plt.text(p, 1.5, str(int(r[p])))
                 if iterm == 'az':
-                    plt.text(p,1.5,str(int(r[p])))
+                    plt.text(p, 1.5, str(int(r[p])))
 
-    print(len(distan),len(x))
-    plt.legend(loc='upper right', frameon=True, fancybox=True,fontsize = 6)
-    # plt.savefig('D:/杭州/2024年1月17日监测图像/噪声/5/{}.jpg'.format(s_name),dpi=800, bbox_inches='tight')
+    print(len(distan), len(x))
+    plt.legend(loc='upper right', frameon=True, fancybox=True, fontsize=6)
+    plt.tight_layout()
+    # plt.savefig('D:/南京车载mems/平稳性噪声图像/4号线/噪声/龙江-仙林湖/{}.jpg'.format(s_name),dpi=800, bbox_inches='tight')
 
     plt.show()
-    # plt.close()
+    plt.close()
 
 
 def get_distance(mems_name):
     global lic1, lic2
-    dfA = pd.read_csv('D:/南京车载mems/真实里程/3号线.csv')
+    dfA = pd.read_csv('D:/南京车载mems/真实里程/4号线.csv')
     file_name1 = mems_name
     parts = file_name1.split("-")
     part1 = parts[0]
@@ -500,12 +493,12 @@ if __name__ == "__main__":
     # path2 = "D:/5号线/4/上行/莘庄站-春申路.csv"  # 20230203去火车站和  20230203往基隆方向
     # path3 = 'D:/5号线/6/下行/西渡站-江川路.csv'
     # path4 = 'D:/13号线/里程/金沙江路-大渡河路.csv'  # 浦三路-御桥路.csv
-    path5 = 'D:\hangzhou/e45f01490217_20240313-130945.csv'
-    distan = get_distance('柳洲东路-上元门')
-    handle(path5,'ay',distan,op = 0)
-    # path = 'D:/杭州/2024年1月17日拆分数据/2'
-    # file_names = os.listdir(path)
-    # for i in file_names:
-    #     real = i[:-4]
-    #     distan = get_distance(real)
-    #     handle(path + '/' + i, 'ay', distan,op = 1)
+    # path5 = r'D:/南京车载mems/3号线/鼓楼-珠江下行.csv'
+    # distan = get_distance('珠江路-鼓楼')
+    # handle(path5, 'az', distan, op=0)
+    path = 'D:/南京车载mems/拆分数据/4号线/龙江-仙林湖'
+    file_names = os.listdir(path)
+    for i in file_names:
+        real = i[:-4]
+        distan = get_distance(real)
+        handle(path + '/' + i, 'noise', distan,op =0)
